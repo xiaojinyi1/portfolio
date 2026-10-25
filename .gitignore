@@ -1,0 +1,9 @@
+node_modules
+.npm-cache
+.next
+out
+data
+.env.local
+screenshots
+.superpowers/
+*.tsbuildinfo
