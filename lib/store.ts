@@ -1,9 +1,9 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Project } from "./types";
 
-const ROOT = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
+// 不用 import.meta.url：Next 把服务端代码打包后那里拿不到可用的 URL
+const ROOT = process.env.PORTFOLIO_ROOT ?? process.cwd();
 
 /** 数据目录：默认 <repo>/data，测试用 PORTFOLIO_DATA_DIR 覆盖。调用时才读环境变量。 */
 export function dataDir(): string {
