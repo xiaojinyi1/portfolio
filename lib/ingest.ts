@@ -1,11 +1,11 @@
-import AdmZip from "adm-zip";
-import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { detectEntry } from "./detect";
 import type { SiteMaterial } from "./generate";
 import { collectMaterial } from "./material";
 import { dataDir, siteDir } from "./store";
 import type { Runtime } from "./types";
+import { extractZip } from "./zip";
 
 export type IngestInput =
   | { kind: "zip"; path: string; slug: string; title: string }
@@ -154,8 +154,7 @@ export async function ingest(input: IngestInput): Promise<IngestResult> {
   }
 
   if (input.kind === "zip") {
-    const zip = new AdmZip(input.path);
-    zip.extractAllTo(dest, true);
+    await extractZip(await readFile(input.path), dest);
   } else if (input.kind === "folder") {
     await copyTree(input.path, dest);
   } else {
