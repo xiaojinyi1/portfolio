@@ -76,9 +76,10 @@ img {
 
 .prose {
   font-family: var(--font-read);
-  font-size: clamp(17px, 1.35vw, 19px);
+  /* 投影仪上后排要能读：最小 18px，宽屏到 20px */
+  font-size: clamp(18px, 1.42vw, 20px);
   line-height: 1.75;
-  max-width: 62ch;
+  max-width: 60ch;
   color: var(--text-primary);
 }
 
@@ -379,8 +380,8 @@ img {
 }
 
 .facts-value {
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .detail-figures {
