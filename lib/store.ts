@@ -54,8 +54,13 @@ export function siteDir(slug: string): string {
   return join(workDir(), "sites", slug);
 }
 
-/** 线上形态：没有可写磁盘、没有长驻进程，后台必须关掉 */
+/**
+ * 线上形态：没有可写磁盘、没有长驻进程，后台必须关掉。
+ * VERCEL 是自动的；其它容器平台（腾讯云 CloudBase 等）用 PORTFOLIO_HOSTED=1 手动标。
+ */
 export function isHosted(): boolean {
+  const flag = process.env.PORTFOLIO_HOSTED;
+  if (flag === "1" || flag === "true") return true;
   return Boolean(process.env.VERCEL);
 }
 
