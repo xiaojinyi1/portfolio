@@ -1,5 +1,7 @@
+import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Nav } from "@/components/Nav";
+import { isHosted } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,9 @@ export const metadata = {
 };
 
 export default function AdminPage() {
+  // 线上没有可写磁盘，后台在这里没有意义，直接当作不存在
+  if (isHosted()) notFound();
+
   return (
     <>
       <Nav />

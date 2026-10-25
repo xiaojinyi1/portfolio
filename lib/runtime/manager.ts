@@ -1,9 +1,9 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import type { Server } from "node:http";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { Project } from "../types";
-import { dataDir } from "../store";
+import { workDir } from "../store";
 import { allocatePort, isPortFree } from "./ports";
 import { startStaticServer } from "./static-server";
 
@@ -199,12 +199,17 @@ export class Manager {
 
     try {
       if (project.runtime.kind === "static") {
-        entry.server = await startStaticServer(project.runtime.dir, port);
+        // 相对路径按仓库根解析：content/projects.json 是提交进 git 的，
+        // 里面不能写死某台机器的绝对路径。
+        const dir = isAbsolute(project.runtime.dir)
+          ? project.runtime.dir
+          : resolve(process.env.PORTFOLIO_ROOT ?? process.cwd(), project.runtime.dir);
+        entry.server = await startStaticServer(dir, port);
         entry.status = "ready";
         return port;
       }
 
-      const logPath = join(dataDir(), "logs", `${project.slug}.log`);
+      const logPath = join(workDir(), "logs", `${project.slug}.log`);
       entry.logPath = logPath;
       const child = this.spawner(
         project.runtime.start,

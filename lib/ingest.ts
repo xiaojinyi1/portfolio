@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { detectEntry } from "./detect";
 import type { SiteMaterial } from "./generate";
 import { collectMaterial } from "./material";
-import { dataDir, siteDir } from "./store";
+import { siteDir, workDir } from "./store";
 import type { Runtime } from "./types";
 import { extractZip } from "./zip";
 
@@ -126,7 +126,7 @@ export async function ingest(input: IngestInput): Promise<IngestResult> {
   const dest = siteDir(input.slug);
   await rm(dest, { recursive: true, force: true });
   await mkdir(dest, { recursive: true });
-  await mkdir(dataDir(), { recursive: true });
+  await mkdir(workDir(), { recursive: true });
 
   if (input.kind === "remote") {
     const result = await mirrorRemote(input.url, dest);

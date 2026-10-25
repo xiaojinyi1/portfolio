@@ -6,6 +6,8 @@ export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
   if (process.env.PORTFOLIO_NO_PREWARM) return;
+  // 线上（Vercel）没有长驻进程可预热，也不该在 serverless 里 spawn 任何东西
+  if (process.env.VERCEL) return;
 
   try {
     const [{ readProjects }, { manager }] = await Promise.all([

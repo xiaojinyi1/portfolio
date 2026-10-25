@@ -1,9 +1,12 @@
 import { authCookieHeader, checkPassword } from "@/lib/auth";
-import { badRequest, json, readJson } from "@/lib/api";
+import { badRequest, json, offlineInHosted, readJson } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request): Promise<Response> {
+  const offline = offlineInHosted();
+  if (offline) return offline;
+
   let body: { password?: string };
   try {
     body = await readJson<{ password?: string }>(req);

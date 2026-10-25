@@ -2,8 +2,13 @@ node_modules
 .npm-cache
 .next
 out
+# data/ 只在本地跑：站点副本、日志、临时解压。线上构建不读它。
 data
 .env.local
 screenshots
 .superpowers/
 *.tsbuildinfo
+
+# 下面这些一定要进 git，否则线上构建是空的：
+#   content/projects.json   作品数据（发布通道）
+#   public/media/           详情页图片（CDN 直接出）

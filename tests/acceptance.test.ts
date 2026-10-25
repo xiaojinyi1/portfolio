@@ -11,7 +11,10 @@ import { readProjects } from "@/lib/store";
 
 // 验收标准 1 的前半：四种来源都能得到一个带 runtime 的项目
 function useEnv(): void {
-  process.env.PORTFOLIO_DATA_DIR = mkdtempSync(join(tmpdir(), "accept-"));
+  const root = mkdtempSync(join(tmpdir(), "accept-"));
+  process.env.PORTFOLIO_DATA_DIR = join(root, "content");
+  process.env.PORTFOLIO_WORK_DIR = join(root, "work");
+  process.env.PORTFOLIO_PUBLIC_DIR = join(root, "public");
   process.env.DEEPSEEK_API_KEY = "";
 }
 

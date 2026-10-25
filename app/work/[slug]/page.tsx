@@ -6,7 +6,7 @@ import { Nav } from "@/components/Nav";
 import { PreviewFrame } from "@/components/PreviewFrame";
 import { RevealImage } from "@/components/RevealImage";
 import { manager } from "@/lib/runtime/manager";
-import { getProject, readProjects } from "@/lib/store";
+import { getProject, isHosted, readProjects } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +20,11 @@ export default async function WorkPage({ params }: PageProps) {
 
   if (!project || !project.published) notFound();
 
-  // 打开详情页就把这件作品拉起来（已经 ready 的直接返回端口）
-  let port: number | undefined = project.port;
-  if (project.runtime.kind !== "remote") {
+  // 线上没有可写磁盘、也没有长驻进程：只认作品自己的公网地址。
+  // 本地演示才去拉端口——那是"点开就是它在跑"的来源。
+  const hosted = isHosted();
+  let port: number | undefined;
+  if (!hosted && !project.liveUrl && project.runtime.kind !== "remote") {
     try {
       port = await manager.ensure(project);
     } catch {
@@ -38,7 +40,10 @@ export default async function WorkPage({ params }: PageProps) {
   const prev = index > 0 ? all[index - 1] : null;
   const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
 
-  const externalUrl = project.runtime.kind === "remote" ? project.runtime.url : undefined;
+  const externalUrl =
+    project.liveUrl ?? (project.runtime.kind === "remote" ? project.runtime.url : undefined);
+  // 本地演示时按钮要去本地端口，线上才去 liveUrl
+  const openUrl = externalUrl ?? (port ? `http://127.0.0.1:${port}/` : undefined);
 
   return (
     <>
@@ -80,17 +85,27 @@ export default async function WorkPage({ params }: PageProps) {
         ) : null}
 
         <div className="btn-row" style={{ margin: "32px 0 8px" }}>
-          <Link className="btn" href={externalUrl ?? "#preview"}>
-            打开网站 ↗
-          </Link>
+          {openUrl ? (
+            <a className="btn" href={openUrl} target="_blank" rel="noreferrer">
+              打开网站 ↗
+            </a>
+          ) : (
+            <span className="btn btn-ghost" aria-disabled="true">
+              线上地址还没填
+            </span>
+          )}
           <span className="muted" style={{ fontSize: 13 }}>
-            {project.runtime.kind === "static"
-              ? "静态托管在本地端口"
-              : project.runtime.kind === "process"
-                ? `本地进程：${project.runtime.start}`
-                : project.runtime.mirrored
-                  ? "线上站点（已镜像到本地）"
-                  : "线上站点（直接嵌入）"}
+            {project.liveUrl
+              ? "作品部署在它自己的地址上，这里直接嵌进来"
+              : hosted
+                ? "这件作品还没部署，页面上只有介绍和截图"
+                : project.runtime.kind === "static"
+                  ? "静态托管在本地端口"
+                  : project.runtime.kind === "process"
+                    ? `本地进程：${project.runtime.start}`
+                    : project.runtime.mirrored
+                      ? "线上站点（已镜像到本地）"
+                      : "线上站点（直接嵌入）"}
           </span>
         </div>
 

@@ -9,7 +9,10 @@ import { readProjects } from "@/lib/store";
 
 // 共用进程里环境变量会互相污染：每条测试开头重设
 function freshData(): void {
-  process.env.PORTFOLIO_DATA_DIR = mkdtempSync(join(tmpdir(), "import-"));
+  const root = mkdtempSync(join(tmpdir(), "import-"));
+  process.env.PORTFOLIO_DATA_DIR = join(root, "content");
+  process.env.PORTFOLIO_WORK_DIR = join(root, "work");
+  process.env.PORTFOLIO_PUBLIC_DIR = join(root, "public");
   process.env.DEEPSEEK_API_KEY = "";
 }
 

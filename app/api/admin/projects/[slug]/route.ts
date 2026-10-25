@@ -33,6 +33,17 @@ export async function PATCH(
   if (typeof body.note === "string") next.note = body.note.trim() || undefined;
   if (typeof body.order === "number" && Number.isFinite(body.order)) next.order = body.order;
 
+  if (typeof body.liveUrl === "string") {
+    const liveUrl = body.liveUrl.trim();
+    if (!liveUrl) {
+      next.liveUrl = undefined;
+    } else if (!/^https?:\/\//i.test(liveUrl)) {
+      return badRequest("线上地址要以 http:// 或 https:// 开头");
+    } else {
+      next.liveUrl = liveUrl;
+    }
+  }
+
   if (Array.isArray(body.intro)) {
     next.intro = body.intro.map((part) => String(part).trim()).filter(Boolean);
   }

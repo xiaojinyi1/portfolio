@@ -26,6 +26,7 @@ export function ProjectEditor({
   const [images, setImages] = useState<ProjectImage[]>(project.images);
   const [published, setPublished] = useState(project.published);
   const [note, setNote] = useState(project.note ?? "");
+  const [liveUrl, setLiveUrl] = useState(project.liveUrl ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +63,7 @@ export function ProjectEditor({
         date,
         note,
         published,
+        liveUrl,
         intro: intro
           .split(/\n{2,}/)
           .map((part) => part.trim())
@@ -109,6 +111,18 @@ export function ProjectEditor({
               style={{ minHeight: 220 }}
               onChange={(event) => setIntro(event.target.value)}
             />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-live">线上地址（部署后的作品链接）</label>
+            <input
+              id="edit-live"
+              value={liveUrl}
+              placeholder="https://your-project.pages.dev"
+              onChange={(event) => setLiveUrl(event.target.value)}
+            />
+            <p className="muted" style={{ fontSize: 12, margin: "6px 0 0" }}>
+              填了它，详情页就嵌这个地址；线上只认这个，本地没有它才用端口。
+            </p>
           </div>
           <div className="field">
             <label htmlFor="edit-note">备注（下次重新生成会用到）</label>

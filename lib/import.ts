@@ -1,10 +1,10 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { access, copyFile, mkdir, stat, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { generateDraft } from "./generate";
 import { scanImages } from "./images";
 import { ingest } from "./ingest";
 import { toSlug, uniqueSlug } from "./slug";
-import { dataDir, readProjects, upsertProject } from "./store";
+import { mediaDir, mediaKey, readProjects, upsertProject, workDir } from "./store";
 import type { Project, ProjectImage } from "./types";
 
 export type ImportInput =
@@ -18,9 +18,65 @@ export interface ImportResult {
   warnings: string[];
 }
 
-/** 图片从 data/sites 里出，走 /media/<slug>/<path> 路由喂给页面 */
+/** 图片落在 public/media/<key>/ 下，线上由 CDN 直接出，不经过任何运行时 */
 export function mediaUrl(slug: string, src: string): string {
-  return `/media/${encodeURIComponent(slug)}/${src.split("/").map(encodeURIComponent).join("/")}`;
+  return `/media/${encodeURIComponent(mediaKey(slug))}/${src.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+/** 单张图上限：git 里塞大图会让仓库越来越重，超了就跳过并提示 */
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function copyIntoMedia(slug: string, from: string, relative: string): Promise<string | null> {
+  const dir = mediaDir(slug);
+  // 保留站点里的相对路径（assets/cover.png 还是 assets/cover.png），只把每段清洗干净
+  const wanted = relative
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => segment.replace(/[^\w.\-]+/g, "_"))
+    .join("/");
+  const slash = wanted.lastIndexOf("/");
+  const prefix = slash < 0 ? "" : wanted.slice(0, slash + 1);
+  const base = slash < 0 ? wanted : wanted.slice(slash + 1);
+  let final = wanted;
+  let suffix = 2;
+  while (await exists(join(dir, final))) {
+    final = `${prefix}${suffix++}-${base}`;
+  }
+  const target = join(dir, final);
+  await mkdir(dirname(target), { recursive: true });
+  await copyFile(from, target);
+  return mediaUrl(slug, final);
+}
+
+async function collectImages(
+  slug: string,
+  entryDir: string,
+  title: string,
+  warnings: string[],
+): Promise<ProjectImage[]> {
+  const candidates = await scanImages(entryDir, 3);
+  const images: ProjectImage[] = [];
+  for (const candidate of candidates) {
+    const from = join(entryDir, candidate.src);
+    const info = await stat(from).catch(() => null);
+    if (!info) continue;
+    if (info.size > MAX_IMAGE_BYTES) {
+      warnings.push(`${candidate.src} 太大了（超过 2MB），没有放进详情页`);
+      continue;
+    }
+    const src = await copyIntoMedia(slug, from, candidate.src);
+    if (src) images.push({ src, caption: "", alt: title });
+  }
+  return images;
 }
 
 export async function importSource(input: ImportInput): Promise<ImportResult> {
@@ -31,7 +87,7 @@ export async function importSource(input: ImportInput): Promise<ImportResult> {
 
   let ingested;
   if (input.kind === "zip") {
-    const tmpDir = join(dataDir(), "tmp");
+    const tmpDir = join(workDir(), "tmp");
     await mkdir(tmpDir, { recursive: true });
     const zipPath = join(tmpDir, `${slug}.zip`);
     await writeFile(zipPath, input.buf);
@@ -50,12 +106,8 @@ export async function importSource(input: ImportInput): Promise<ImportResult> {
     }
   }
 
-  const images: ProjectImage[] = (await scanImages(ingested.entryDir, 3)).map((candidate) => ({
-    src: mediaUrl(slug, candidate.src),
-    caption: "",
-    alt: input.title,
-  }));
-  if (images.length === 0) warnings.push("没在站点里找到图片，详情页会只显示文字");
+  const images = await collectImages(slug, ingested.entryDir, input.title.trim(), warnings);
+  if (images.length === 0) warnings.push("没在站点里找到合适的图片，详情页会只显示文字");
 
   let intro: string[] = [];
   const facts = { time: input.date, role: "", stack: "", status: "" };

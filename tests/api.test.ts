@@ -9,7 +9,9 @@ const DATA = mkdtempSync(join(tmpdir(), "api-"));
 
 // 所有测试共用一个进程，环境变量会互相污染：每条测试开头重设一次
 function useEnv(): void {
-  process.env.PORTFOLIO_DATA_DIR = DATA;
+  process.env.PORTFOLIO_DATA_DIR = join(DATA, "content");
+  process.env.PORTFOLIO_WORK_DIR = join(DATA, "work");
+  process.env.PORTFOLIO_PUBLIC_DIR = join(DATA, "public");
   process.env.ADMIN_PASSWORD = "portfolio";
   process.env.DEEPSEEK_API_KEY = "";
 }
@@ -84,7 +86,7 @@ test("上传 zip → 建项目、图片进 images、文件落到 data/sites、�
   assert.equal(payload.project.published, false);
   assert.ok(payload.warnings.some((w) => w.includes("DEEPSEEK_API_KEY")));
 
-  const siteIndex = join(DATA, "sites", payload.project.slug, "index.html");
+  const siteIndex = join(DATA, "work", "sites", payload.project.slug, "index.html");
   assert.ok(existsSync(siteIndex), `没找到 ${siteIndex}`);
   assert.match(readFileSync(siteIndex, "utf8"), /照片墙/);
 
@@ -101,4 +103,24 @@ test("上传 zip → 建项目、图片进 images、文件落到 data/sites、�
   const saved = (await list.json()) as Array<{ slug: string; published: boolean; intro: string[] }>;
   assert.equal(saved[0].published, true);
   assert.deepEqual(saved[0].intro, ["第一段", "第二段"]);
+});
+
+test("线上形态：后台整条链路都当不存在（404）", async () => {
+  useEnv();
+  process.env.VERCEL = "1";
+  try {
+    const loginRes = await login(
+      new Request("http://x/api/admin/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: "portfolio" }),
+      }),
+    );
+    assert.equal(loginRes.status, 404, "口令对也不能登录");
+
+    const listRes = await listProjects(new Request("http://x/api/admin/projects", authed()));
+    assert.equal(listRes.status, 404, "带 cookie 也不能读项目");
+  } finally {
+    delete process.env.VERCEL;
+  }
 });

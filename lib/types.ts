@@ -22,6 +22,8 @@ export interface Project {
   images: ProjectImage[];
   note?: string;
   runtime: Runtime;
+  /** 作品自己的公网地址（Cloudflare Pages 之类）。线上详情页用它做预览 */
+  liveUrl?: string;
   port?: number;
   sourceLabel: string;
   published: boolean;
