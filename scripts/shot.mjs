@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const CANDIDATES = [
@@ -26,6 +26,8 @@ export function screenshot(url, outPath, width = 1440, height = 900) {
   const browser = findBrowser();
   if (!browser) return Promise.reject(new Error("没找到 Chrome / Edge，无法截图"));
 
+  // Chrome 不认相对路径的 --screenshot，必须先转成绝对路径
+  outPath = resolve(outPath);
   mkdirSync(dirname(outPath), { recursive: true });
   const profile = mkdtempSync(join(tmpdir(), "shot-profile-"));
 

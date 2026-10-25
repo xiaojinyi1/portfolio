@@ -196,9 +196,11 @@ export async function ingest(input: IngestInput): Promise<IngestResult> {
   }
 
   const entryDir = detection.dir;
+  const label =
+    input.kind === "zip" ? "zip 上传" : input.kind === "local" ? input.path : "文件夹上传";
   return {
     runtime: { kind: "static", dir: entryDir },
-    sourceLabel: input.kind === "zip" ? "zip 上传" : "文件夹上传",
+    sourceLabel: label,
     material: await collectMaterial(entryDir),
     entryDir,
   };

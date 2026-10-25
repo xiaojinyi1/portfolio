@@ -5,6 +5,8 @@ export type Runtime =
 
 export type FactKey = "time" | "role" | "stack" | "status";
 
+export type ProjectFacts = Record<FactKey, string>;
+
 export interface ProjectImage {
   src: string;
   caption: string;
@@ -16,7 +18,7 @@ export interface Project {
   title: string;
   date: string;
   intro: string[];
-  facts: Record<FactKey, string>;
+  facts: ProjectFacts;
   images: ProjectImage[];
   note?: string;
   runtime: Runtime;
@@ -29,7 +31,7 @@ export interface Project {
 
 export interface Draft {
   intro: string[];
-  facts: Record<FactKey, string>;
+  facts: ProjectFacts;
 }
 
 export const FACT_LABELS: Record<FactKey, string> = {
