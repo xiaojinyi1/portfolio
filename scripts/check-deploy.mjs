@@ -52,4 +52,5 @@ if (hosted) {
 }
 
 console.log(problems.length ? `\n不通过：\n- ${problems.join("\n- ")}` : "\n全部符合预期");
-process.exit(problems.length ? 1 : 0);
+// 不用 process.exit()：Windows 上还有 keep-alive 连接时会触发 libuv 断言
+process.exitCode = problems.length ? 1 : 0;
