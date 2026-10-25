@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface FloatingCoverProps {
   src: string | null;
@@ -9,10 +9,9 @@ interface FloatingCoverProps {
   activeKey: string | null;
 }
 
-/** 悬停作品行时跟随光标的封面：只动 transform/opacity，不引起布局 */
+/** 悬停作品行时跟随光标的封面：外层跟手位移，内层做弹性放大，互不干扰 */
 export function FloatingCover({ src, alt, activeKey }: FloatingCoverProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export function FloatingCover({ src, alt, activeKey }: FloatingCoverProps) {
         const height = node.offsetHeight;
         node.style.transform = `translate3d(${Math.round(last.x - width * 0.5)}px, ${Math.round(
           last.y - height * 0.62,
-        )}px, 0) scale(1)`;
+        )}px, 0)`;
       }
       frame = requestAnimationFrame(loop);
     };
@@ -52,8 +51,11 @@ export function FloatingCover({ src, alt, activeKey }: FloatingCoverProps) {
   if (!src) return null;
 
   return (
-    <div ref={ref} className="floating-cover" data-visible="true" aria-hidden="true" key={activeKey ?? ""}>
-      <img src={src} alt={alt} />
+    <div ref={ref} className="floating-cover" aria-hidden="true">
+      {/* key 换一次就重挂一次，于是每件作品都是重新「弹」出来的 */}
+      <div className="floating-cover-inner" key={activeKey ?? ""}>
+        <img src={src} alt={alt} />
+      </div>
     </div>
   );
 }

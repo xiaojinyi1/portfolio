@@ -138,11 +138,7 @@ export function ProjectEditor({
           {images.map((image, index) => (
             <div key={image.src} style={{ display: "grid", gap: 6, marginBottom: 12 }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  style={{ width: 72, height: 54, objectFit: "cover", border: "1px solid var(--line)" }}
-                />
+                <img src={image.src} alt={image.alt} className="thumb" />
                 <div style={{ flex: 1 }}>
                   <input
                     value={image.caption}
